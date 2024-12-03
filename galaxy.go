@@ -1,3 +1,40 @@
+/* Originally done by Uli Siegmund <uli@wombat.okapi.sub.org> on Amiga
+ *   for EGS in Cluster
+ * Port from Cluster/EGS to C/Intuition by Harald Backert
+ * Port to X11 and incorporation into xlockmore by Hubert Feyrer
+ *   <hubert.feyrer@rz.uni-regensburg.de>
+ * Port to from C to Golang by Ahmed Khalf
+ *   <ahmedkhalf567@gmail.com>
+ *
+ * Permission to use, copy, modify, and distribute this software and its
+ * documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright notice appear in all copies and that
+ * both that copyright notice and this permission notice appear in
+ * supporting documentation.
+ *
+ * This file is provided AS IS with no warranties of any kind.  The author
+ * shall have no liability with respect to the infringement of copyrights,
+ * trade secrets or any patents by this file or any part thereof.  In no
+ * event will the author be liable for any lost revenue or profits or
+ * other special, indirect and consequential damages.
+ *
+ * Revision History:
+ * 03-Dec-24: Port to Golang by Ahmed Khalf
+ * 26-Aug-00: robert.nagtegaal@phil.uu.nl and roland@tschai.demon.nl:
+ *            various improvements
+ * 10-May-97: jwz@jwz.org: turned into a standalone program.
+ * 18-Apr-97: Memory leak fixed by Tom Schmidt <tschmidt@micron.com>
+ * 07-Apr-97: Modified by Dave Mitchell <davem@magnet.com>
+ * 23-Oct-94: Modified by David Bagley <bagleyd@bigfoot.com>
+ *  random star sizes
+ *  colors change depending on velocity
+ * 10-Oct-94: Add colors by Hubert Feyer
+ * 30-Sep-94: Initial port by Hubert Feyer
+ * 09-Mar-94: VMS can generate a random number 0.0 which results in a
+ *            division by zero, corrected by Jouk Jansen
+ *            <joukj@crys.chem.uva.nl>
+ */
+
 package main
 
 import (
