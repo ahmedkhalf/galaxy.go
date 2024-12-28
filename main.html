@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<head>
+    <title>Galaxy</title>
+    <style>
+    html, body {
+        color: black;
+    }
+    </style>
+    <script src="/wasm_exec.js"></script>
+    <script>
+    const go = new Go();
+    WebAssembly.instantiateStreaming(fetch("/galaxy.wasm"), go.importObject).then(result => {
+        go.run(result.instance);
+    });
+    </script>
+</head>
+<body>
+</body>
+</html>

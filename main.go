@@ -1,9 +1,13 @@
+//go:build js && wasm
+
 package main
 
 import (
 	"image/color"
 	"log"
 	"math"
+	"strconv"
+	"syscall/js"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -27,7 +31,9 @@ func hueToRGB(h float64) color.RGBA {
 type ScreenSaver struct {
 	screenWidth  int
 	screenHeight int
+	scale        int
 	universe     Universe
+	nextPoints   chan [][2]int
 }
 
 func (g *ScreenSaver) Update() error {
@@ -38,11 +44,22 @@ func (g *ScreenSaver) Update() error {
 }
 
 func (g *ScreenSaver) Draw(screen *ebiten.Image) {
-	for _, galaxy := range g.universe.Galaxies {
-		for _, point := range galaxy.Newpoints {
-			color := hueToRGB(float64(galaxy.Galcol) / (COLORBASE - 1))
-			screen.Set(point[0], point[1], color)
+	points := <-g.nextPoints
+	for _, point := range points {
+		color := hueToRGB(float64(g.universe.Galaxies[0].Galcol) / (COLORBASE - 1))
+		screen.Set(point[0], point[1], color)
+	}
+}
+
+func (g *ScreenSaver) generateNextPoints() {
+	for {
+		var points [][2]int
+		for _, galaxy := range g.universe.Galaxies {
+			for _, point := range galaxy.Newpoints {
+				points = append(points, point)
+			}
 		}
+		g.nextPoints <- points
 	}
 }
 
@@ -51,7 +68,7 @@ func (_ *ScreenSaver) Layout(w, h int) (int, int) {
 }
 
 func (g *ScreenSaver) LayoutF(logicWinWidth, logicWinHeight float64) (float64, float64) {
-	scale := ebiten.Monitor().DeviceScaleFactor()
+	scale := ebiten.Monitor().DeviceScaleFactor() / float64(g.scale)
 
 	// Ebiten uses ceil internally to calculate the screen size, based on v2.8.5
 	g.screenWidth = int(math.Ceil(logicWinWidth * scale))
@@ -60,15 +77,47 @@ func (g *ScreenSaver) LayoutF(logicWinWidth, logicWinHeight float64) (float64, f
 	return logicWinWidth * scale, logicWinHeight * scale
 }
 
+func GetURLParameter(name string) string {
+	window := js.Global().Get("window")
+	searchParams := window.Get("location").Get("search")
+	urlSearchParams := js.Global().Get("URLSearchParams").New(searchParams)
+	return urlSearchParams.Call("get", name).String()
+}
+
+func getScale() int {
+	scale := GetURLParameter("scale")
+	i, err := strconv.Atoi(scale)
+	if err != nil {
+		return 1
+	}
+	return i
+}
+
+func getFPS() int {
+	fps := GetURLParameter("fps")
+	i, err := strconv.Atoi(fps)
+	if err != nil || i < 1 || i > 60 {
+		return 30
+	}
+	return i
+}
+
 func main() {
 	initialWidth := 800
 	initialHeight := 600
 	ebiten.SetWindowSize(initialWidth, initialHeight)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetWindowTitle("Resizable Black Window with Center Red Pixel")
-	ebiten.SetTPS(30)
+	ebiten.SetTPS(getFPS())
 
-	game := &ScreenSaver{screenWidth: initialWidth, screenHeight: initialHeight, universe: InitGalaxy()}
+	game := &ScreenSaver{
+		screenWidth:  initialWidth,
+		screenHeight: initialHeight,
+		universe:     InitGalaxy(),
+		scale:        getScale(),
+		nextPoints:   make(chan [][2]int, 1),
+	}
+	go game.generateNextPoints()
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
