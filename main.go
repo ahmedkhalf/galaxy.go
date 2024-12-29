@@ -33,7 +33,7 @@ type ScreenSaver struct {
 	screenHeight int
 	scale        int
 	universe     Universe
-	nextPoints   chan [][2]int
+	nextPoints   chan [][3]int
 }
 
 func (g *ScreenSaver) Update() error {
@@ -46,17 +46,18 @@ func (g *ScreenSaver) Update() error {
 func (g *ScreenSaver) Draw(screen *ebiten.Image) {
 	points := <-g.nextPoints
 	for _, point := range points {
-		color := hueToRGB(float64(g.universe.Galaxies[0].Galcol) / (COLORBASE - 1))
+		color := hueToRGB(float64(point[2]) / (COLORBASE - 1))
 		screen.Set(point[0], point[1], color)
 	}
 }
 
 func (g *ScreenSaver) generateNextPoints() {
 	for {
-		var points [][2]int
+		var points [][3]int
 		for _, galaxy := range g.universe.Galaxies {
 			for _, point := range galaxy.Newpoints {
-				points = append(points, point)
+				to_add := [3]int{point[0], point[1], galaxy.Galcol}
+				points = append(points, to_add)
 			}
 		}
 		g.nextPoints <- points
@@ -115,7 +116,7 @@ func main() {
 		screenHeight: initialHeight,
 		universe:     InitGalaxy(),
 		scale:        getScale(),
-		nextPoints:   make(chan [][2]int, 1),
+		nextPoints:   make(chan [][3]int, 4),
 	}
 	go game.generateNextPoints()
 	if err := ebiten.RunGame(game); err != nil {
